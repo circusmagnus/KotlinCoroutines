@@ -12,7 +12,9 @@ private object OffersData {
 
     val offers: List<Offer> = generateOffers()
         get() {
-            Thread.sleep(10 * 1000)
+            print("running on thread ${Thread.currentThread()} ")
+            repeat(5) { print("working ");  Thread.sleep(1000) }
+
             return field
         }
 
@@ -42,7 +44,7 @@ private object OffersData {
 class SellersRepository {
 
     fun getUsers(query: String): List<Seller> {
-        return SellersData.sellers
+        return SellersData.sellers.filter { it.name == query }
     }
 }
 
@@ -50,6 +52,7 @@ private object SellersData {
 
     val sellers: List<Seller> = generateSellers()
         get() {
+            print("running on thread ${Thread.currentThread()}")
             Thread.sleep(500)
             return field
         }
