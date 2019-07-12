@@ -1,16 +1,16 @@
-//class SellersRepository {
+//class data.SellersRepository {
 //
-//    fun getUsers(query: String): Collection<Offer> {
+//    fun getUsers(query: String): Collection<data.Offer> {
 //        Thread.sleep(500)
-//        return SellersData.sellers.filterValues { offer -> offer.name == query }.values
+//        return data.SellersData.sellers.filterValues { offer -> offer.name == query }.values
 //    }
 //}
 //
-//private object SellersData {
+//private object data.SellersData {
 //
-//    val sellers: Map<String, Seller> = generateOffers()
+//    val sellers: Map<String, data.Seller> = generateOffers()
 //
-//    private fun generateSellers(): Map<String, Seller>{
+//    private fun generateSellers(): Map<String, data.Seller>{
 //        val ids = generateSequence(1) { id -> id + 1  }
 //            .take(100)
 //            .map { it.toString() }
@@ -29,7 +29,7 @@
 //            "Fajka"
 //        )
 //
-//        return ids.mapIndexed { idIndex, id -> Offer(id, names[idIndex % names.size]) }
+//        return ids.mapIndexed { idIndex, id -> data.Offer(id, names[idIndex % names.size]) }
 //            .map { it.id to it }
 //            .toMap()
 //    }

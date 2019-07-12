@@ -1,3 +1,5 @@
+package data
+
 import kotlin.random.Random
 import kotlin.random.nextInt
 
