@@ -1,0 +1,1 @@
+data class Seller(val name: String, val offers: List<String>)
