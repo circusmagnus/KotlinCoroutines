@@ -5,10 +5,10 @@ interface Display {
 
 class ConsoleDisplay : Display {
     override fun show(what: String) {
-        print("$what on thread: ${Thread.currentThread()} ")
+        print(what)
     }
 
     override fun showNewLine(what: String) {
-        println("$what on thread: ${Thread.currentThread()} ")
+        println(what)
     }
 }

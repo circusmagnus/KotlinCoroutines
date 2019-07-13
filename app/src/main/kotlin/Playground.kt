@@ -7,22 +7,16 @@ class Playground(
 
     fun run() {
         runBlocking {
+            val fetchOffers = async(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
+
             val anim = launch {
                 while (isActive) {
                     delay(200); display.showNewLine(".")
                 }
             }
-            launch(Dispatchers.IO) {
-                val result = offersRepository.getOffersBlocking("Krzesło")
-                anim.cancel()
-                display.showNewLine("Done. Offers: $result")
-            }
+            val offers = fetchOffers.await()
+            anim.cancelAndJoin()
+            display.showNewLine("Done. Offers: $offers")
         }
-
-//        repeat(3) { Thread.sleep(200); display.showNewLine(".") }
-//        val result = offersRepository.getOffersBlocking("Krzesło")
-//        display.showNewLine("Done. Offers: $result")
-//        repeat(3) { Thread.sleep(200); display.showNewLine(".") }
     }
-
 }
