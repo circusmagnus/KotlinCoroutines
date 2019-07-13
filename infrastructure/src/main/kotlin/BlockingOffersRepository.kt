@@ -1,8 +1,8 @@
 import data.OffersData
 
-class OffersRepository {
+class BlockingOffersRepository {
 
-    fun getOffers(query: String): List<Offer> {
+    fun getOffersBlocking(query: String): List<Offer> {
         return OffersData.offers.filter { offer -> offer.name == query }
     }
 }
