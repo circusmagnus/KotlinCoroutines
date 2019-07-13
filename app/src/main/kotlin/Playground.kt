@@ -8,24 +8,44 @@ class Playground(
 
     fun showOffersForQuery(query: String) {
         runBlocking {
-            val anim = launch {
-                while (true) {
-                    delay(200); display.showNewLine(".")
-                }
-            }
-            val offers = getOffers()
+            val anim = launch { runDotAnim() }
+            val offers = getOffers(query)
             anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
         }
     }
 
-    private suspend fun getOffers() = withContext(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
-
-    fun showSellersforOfferQuery(offerQuery: String) {
-
+    private suspend fun runDotAnim() {
+        while (true) {
+            delay(200); display.showNewLine(".")
+        }
     }
 
-    private fun List<Seller>.filterSellingOffers(offers: List<Offer>): List<Seller> = filter { seller ->
+    fun showSellersWithOffer(offerQuery: String) {
+        runBlocking {
+            val anim = launch { runDotAnim() }
+            val sellers = getSellersForOffer(offerQuery)
+            anim.cancelAndJoin()
+            display.showNewLine("Done. Sellers: $sellers")
+        }
+    }
+
+    private suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
+        offersRepository.getOffersBlocking(query)
+    }
+
+    private suspend fun getSellers() = withContext(Dispatchers.IO) {
+        sellersRepository.getSellersBlocking()
+    }
+
+    private suspend fun getSellersForOffer(offerQuery: String): List<Seller> = coroutineScope {
+        val getOffers = async { getOffers(offerQuery) }
+        val getSellers = async { getSellers() }
+
+        getSellers.await().filterSellingOffers(getOffers.await())
+    }
+
+    private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
     }
 }
