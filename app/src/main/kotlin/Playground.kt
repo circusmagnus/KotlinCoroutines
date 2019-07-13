@@ -2,10 +2,11 @@ import kotlinx.coroutines.*
 
 class Playground(
     private val offersRepository: BlockingOffersRepository,
+    private val sellersRepository: SellersRepository,
     private val display: Display
 ) {
 
-    fun run() {
+    fun showOffersForQuery(query: String) {
         runBlocking {
             val anim = launch {
                 while (true) {
@@ -19,4 +20,12 @@ class Playground(
     }
 
     private suspend fun getOffers() = withContext(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
+
+    fun showSellersforOfferQuery(offerQuery: String) {
+
+    }
+
+    private fun List<Seller>.filterSellingOffers(offers: List<Offer>): List<Seller> = filter { seller ->
+        offers.any { offer -> seller.offerIds.contains(offer.id) }
+    }
 }

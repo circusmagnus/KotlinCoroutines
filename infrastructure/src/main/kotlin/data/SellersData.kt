@@ -8,8 +8,7 @@ internal object SellersData {
 
     val sellers: List<Seller> = generateSellers()
         get() {
-            print("running on thread ${Thread.currentThread()}")
-            Thread.sleep(500)
+            repeat(4) { println("fetching sellers on thread ${Thread.currentThread()} "); Thread.sleep(700) }
             return field
         }
 
@@ -29,11 +28,13 @@ internal object SellersData {
 
         return names.map { name ->
             val sellerOffers = generateSequence {
-                OffersData.offers.let { offers ->
+                OffersData.fastOffers.let { offers ->
                     val random = Random.nextInt(0 until offers.size)
                     offers[random].id
                 }
-            }.toList()
+            }.take(Random.nextInt(0 until 10))
+                .distinct()
+                .toList()
             Seller(name, sellerOffers)
         }
     }
