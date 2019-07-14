@@ -8,36 +8,43 @@ class Playground(
 
     fun getOffersWithQuery(query: String) {
         runBlocking {
-            val fetchOffers = async(Dispatchers.IO) { offersRepository.getOffersBlocking(query) }
-
-            val anim = launch {
-                while (isActive) {
-                    delay(200); display.showNewLine(".")
-                }
-            }
-            val offers = fetchOffers.await()
+            val anim = launch { runDotAnim() }
+            val offers = getOffers(query)
             anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
         }
     }
 
-    fun getSellersForMultiQuery(items: List<String>) {
-        runBlocking {
-
+    private suspend fun runDotAnim() = coroutineScope {
+        while (isActive) {
+            delay(200); display.showNewLine(".")
         }
-
     }
 
-    suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
+    fun getSellersWithOffer(offerQuery: String) {
+        runBlocking {
+            val anim = launch { runDotAnim() }
+            val sellers = getSellersForOffer(offerQuery)
+            anim.cancelAndJoin()
+            display.showNewLine("Done. Sellers: $sellers")
+        }
+    }
+
+    private suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
         offersRepository.getOffersBlocking(query)
     }
 
-    suspend fun getSellers() = withContext(Dispatchers.IO) {
+    private suspend fun getSellers() = withContext(Dispatchers.IO) {
         sellersRepository.getSellersBlocking()
     }
 
-    suspend fun getSellersWithOffers(forQueries: List<String>) = coroutineScope {
-        val offers = forQueries
-            .map { query -> getOffers(query) }
+    private suspend fun getSellersForOffer(offerQuery: String): List<Seller> = coroutineScope {
+        val getOffers = async { getOffers(offerQuery) }
+        val getSellers = async { getSellers() }
+
+        getSellers.await()
+            .filter { seller ->
+                getOffers.await().any { offer -> seller.offerIds.contains(offer.id) }
+            }
     }
 }
