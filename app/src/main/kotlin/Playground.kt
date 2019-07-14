@@ -1,4 +1,6 @@
+import computation.getRebate
 import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -6,7 +8,10 @@ class Playground(
     private val offersRepository: OffersRepository,
     private val sellersRepository: SellersRepository,
     private val display: Display
-) : CoroutineScope by CoroutineScope(Dispatchers.Default) {
+) : CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default + SupervisorJob()
 
     fun startAnimation() {
         launch { runDotAnim() }
@@ -16,6 +21,14 @@ class Playground(
         launch {
             val offers = getOffers(query)
             display.showNewLine("Done. Offers: $offers")
+        }
+    }
+
+    fun showRebates(query: String) {
+        launch {
+            getOffers(query)
+                .map { it.getRebate() }
+                .forEach { display.showNewLine(it.toString()) }
         }
     }
 
