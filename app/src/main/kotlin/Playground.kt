@@ -42,9 +42,10 @@ class Playground(
         val getOffers = async { getOffers(offerQuery) }
         val getSellers = async { getSellers() }
 
-        getSellers.await()
-            .filter { seller ->
-                getOffers.await().any { offer -> seller.offerIds.contains(offer.id) }
-            }
+        getSellers.await().filterSellingOffers(getOffers.await())
+    }
+
+    private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
+        offers.any { offer -> seller.offerIds.contains(offer.id) }
     }
 }
