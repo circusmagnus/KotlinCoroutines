@@ -4,13 +4,15 @@ class Playground(
     private val offersRepository: BlockingOffersRepository,
     private val sellersRepository: SellersRepository,
     private val display: Display
-) {
+) : CoroutineScope by CoroutineScope(Dispatchers.Default) {
+
+    fun startAnimation() {
+        launch { runDotAnim() }
+    }
 
     fun showOffersWithQuery(query: String) {
-        runBlocking {
-            val anim = launch { runDotAnim() }
+        launch {
             val offers = getOffers(query)
-            anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
         }
     }
@@ -22,10 +24,8 @@ class Playground(
     }
 
     fun showSellersWithOffer(offerQuery: String) {
-        runBlocking {
-            val anim = launch { runDotAnim() }
+        launch {
             val sellers = getSellersForOffer(offerQuery)
-            anim.cancelAndJoin()
             display.showNewLine("Done. Sellers: $sellers")
         }
     }
