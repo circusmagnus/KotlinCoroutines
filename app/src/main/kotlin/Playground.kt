@@ -22,6 +22,21 @@ class Playground(
     }
 
     fun getSellersForMultiQuery(items: List<String>) {
+        runBlocking {
 
+        }
+
+    }
+
+    suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
+        offersRepository.getOffersBlocking(query)
+    }
+
+    suspend fun getSellers() = withContext(Dispatchers.IO) {
+        sellersRepository.getSellersBlocking()
+    }
+
+    suspend fun getSellersWithOffers(forQueries: List<String>) = coroutineScope {
+        val offers = async { getOffers() }
     }
 }
