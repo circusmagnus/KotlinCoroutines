@@ -2,12 +2,13 @@ import kotlinx.coroutines.*
 
 class Playground(
     private val offersRepository: BlockingOffersRepository,
+    private val sellersRepository: SellersRepository,
     private val display: Display
 ) {
 
-    fun run() {
+    fun getOffersWithQuery(query: String) {
         runBlocking {
-            val fetchOffers = async(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
+            val fetchOffers = async(Dispatchers.IO) { offersRepository.getOffersBlocking(query) }
 
             val anim = launch {
                 while (isActive) {
@@ -18,5 +19,9 @@ class Playground(
             anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
         }
+    }
+
+    fun getSellersForMultiQuery(items: List<String>) {
+
     }
 }
