@@ -1,20 +1,21 @@
 import kotlinx.coroutines.*
+import java.io.IOException
 
 class Playground(
     private val offersRepository: BlockingOffersRepository,
     private val sellersRepository: SellersRepository,
     private val display: Display
+) : CoroutineScope by CoroutineScope(
+    Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, e -> display.showNewLine("Fail: $e") }
 ) {
 
     fun startAnimation() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        launch { runDotAnim() }
     }
 
-    fun showOffersForQuery(query: String) {
-        runBlocking {
-            val anim = launch { runDotAnim() }
+    fun showOffersWithQuery(query: String) {
+        launch {
             val offers = getOffers(query)
-            anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
         }
     }
@@ -26,10 +27,8 @@ class Playground(
     }
 
     fun showSellersWithOffer(offerQuery: String) {
-        runBlocking {
-            val anim = launch { runDotAnim() }
-            val sellers = getSellersForOffer(offerQuery)
-            anim.cancelAndJoin()
+        launch {
+            val sellers = retryIO(3) { getSellersForOffer(offerQuery) }
             display.showNewLine("Done. Sellers: $sellers")
         }
     }
@@ -38,7 +37,7 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-    private suspend fun getSellers() = withContext(Dispatchers.IO) {
+    suspend fun getSellers() = withContext(Dispatchers.IO) {
         sellersRepository.getSellersBlocking()
     }
 
@@ -46,14 +45,29 @@ class Playground(
         val getOffers = async { getOffers(offerQuery) }
         val getSellers = async { getSellers() }
 
-        getSellers.await().filterSellingOffers(getOffers.await())
+        val (offers, sellers) = Pair(getOffers.await(), getSellers.await())
+        sellers.filterSellingOffers(offers)
     }
+
+    private suspend fun <T> retryIO(times: Int, what: suspend () -> T): T? {
+
+        suspend fun retry(retryCount: Int): T? = try {
+            what()
+        } catch (e: IOException) {
+            if (retryCount < times) {
+                display.showNewLine("failed to load data, retry count: $retryCount")
+                retry(retryCount + 1)
+            } else {
+                display.showNewLine("failed to load data, max retries reached")
+                null
+            }
+        }
+
+        return retry(0)
+    }
+
 
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
-    }
-
-    fun cancel() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
