@@ -37,6 +37,7 @@ class Playground(
     }
 
     suspend fun getSellersWithOffers(forQueries: List<String>) = coroutineScope {
-        val offers = async { getOffers() }
+        val offers = forQueries
+            .map { query -> getOffers(query) }
     }
 }
