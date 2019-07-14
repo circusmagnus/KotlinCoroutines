@@ -1,4 +1,6 @@
 import kotlinx.coroutines.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class Playground(
     private val offersRepository: OffersRepository,
@@ -30,8 +32,10 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
-        offersRepository.getOffersBlocking(query)
+    private suspend fun getOffers(query: String): List<Offer> = suspendCoroutine { coroutine ->
+        offersRepository.getOffersAsync(query) { offers ->
+            coroutine.resume(offers)
+        }
     }
 
     private suspend fun getSellers() = withContext(Dispatchers.IO) {
