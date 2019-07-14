@@ -6,7 +6,7 @@ class Playground(
     private val display: Display
 ) {
 
-    fun getOffersWithQuery(query: String) {
+    fun showOffersWithQuery(query: String) {
         runBlocking {
             val anim = launch { runDotAnim() }
             val offers = getOffers(query)
@@ -21,7 +21,7 @@ class Playground(
         }
     }
 
-    fun getSellersWithOffer(offerQuery: String) {
+    fun showSellersWithOffer(offerQuery: String) {
         runBlocking {
             val anim = launch { runDotAnim() }
             val sellers = getSellersForOffer(offerQuery)
