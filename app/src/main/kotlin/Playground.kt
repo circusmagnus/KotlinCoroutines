@@ -63,13 +63,6 @@ class Playground(
 
     fun showSortedOffers(queries: List<String>) {
         runBlocking {
-            //            queries.map { query ->
-//                launch {
-//                    val offers = getOffers(query)
-//                    val sortedOffers = withContext(Dispatchers.Default) { offers.sorted() }
-//                    sortedOffers.forEach { display.showNewLine(it.toString()) }
-//                }
-//            }
 
             val queriesChannel = Channel<String>(4)
             val unsortedOffersChannel = Channel<List<Offer>>(4)
@@ -80,22 +73,26 @@ class Playground(
                 queriesChannel.close()
             }
 
-
-            repeat(4) {
-                launch(Dispatchers.IO) {
-                    queriesChannel.consumeEach { query -> unsortedOffersChannel.send(getOffers(query)) }
-                    unsortedOffersChannel.close()
+            launch {
+                coroutineScope {
+                    repeat(4) {
+                        launch(Dispatchers.IO) {
+                            for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
+                        }
+                    }
                 }
+                unsortedOffersChannel.close()
             }
 
-            repeat(4) {
-                launch(Dispatchers.Default) {
-                    unsortedOffersChannel.consumeEach { unsorted ->
-                        val sorted = unsorted.sorted()
-                        sortedOffersChannel.send(sorted)
+            launch {
+                coroutineScope {
+                    repeat(4) {
+                        launch(Dispatchers.Default) {
+                            for (unsorted in unsortedOffersChannel) sortedOffersChannel.send(unsorted.sorted())
+                        }
                     }
-                    sortedOffersChannel.close()
                 }
+                sortedOffersChannel.close()
             }
             launch { sortedOffersChannel.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } } }
         }
