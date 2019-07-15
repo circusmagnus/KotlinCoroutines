@@ -64,12 +64,12 @@ class Playground(
     fun showSortedOffers(queries: List<String>) {
         runBlocking {
             //            queries.map { query ->
-//                    launch {
-//                        val offers = getOffers(query)
-//                        val sortedOffers = withContext(Dispatchers.Default) { insertionSort(offers.toTypedArray()) }
-//                        sortedOffers.forEach { display.showNewLine(it.toString()) }
-//                    }
+//                launch {
+//                    val offers = getOffers(query)
+//                    val sortedOffers = withContext(Dispatchers.Default) { offers.sorted() }
+//                    sortedOffers.forEach { display.showNewLine(it.toString()) }
 //                }
+//            }
 
             val queriesChannel = Channel<String>(4)
             val unsortedOffersChannel = Channel<List<Offer>>(4)
@@ -98,8 +98,6 @@ class Playground(
                 }
             }
             launch { sortedOffersChannel.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } } }
-
-
         }
     }
 }

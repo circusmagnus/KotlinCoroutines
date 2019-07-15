@@ -19,7 +19,7 @@ fun main() {
     )
 
     val queries = generateSequence { Random.nextInt(0, availableNames.lastIndex) }
-        .take(10_000)
+        .take(10_000_000)
         .map { availableNames[it] }
         .toList()
 
