@@ -1,5 +1,6 @@
 package computation
 
 import Offer
+import kotlin.math.sqrt
 
-fun Offer.getRebate() = generateSequence { Offer("245", "trudna") }.take(10_000_000).toList().sortedBy { it.name }
+fun Offer.getRebate() = sqrt(Double.MAX_VALUE)
