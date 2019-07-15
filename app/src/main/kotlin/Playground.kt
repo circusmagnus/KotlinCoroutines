@@ -1,4 +1,3 @@
-import computation.getRebate
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -21,14 +20,6 @@ class Playground(
         launch {
             val offers = getOffers(query)
             display.showNewLine("Done. Offers: $offers")
-        }
-    }
-
-    fun showRebates(query: String) {
-        launch {
-            getOffers(query)
-                .map { it.getRebate() }
-                .forEach { display.showNewLine(it.toString()) }
         }
     }
 
@@ -64,5 +55,9 @@ class Playground(
 
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
+    }
+
+    fun showSortedOffers(queries: List<String>) {
+
     }
 }
