@@ -16,16 +16,16 @@ class Playground(
         launch { runDotAnim() }
     }
 
+    private suspend fun runDotAnim() = coroutineScope {
+        while (isActive) {
+            delay(200); display.showNewLine(".")
+        }
+    }
+
     fun showOffersWithQuery(query: String) {
         launch {
             val offers = getOffers(query)
             display.showNewLine("Done. Offers: $offers")
-        }
-    }
-
-    private suspend fun runDotAnim() = coroutineScope {
-        while (isActive) {
-            delay(200); display.showNewLine(".")
         }
     }
 
