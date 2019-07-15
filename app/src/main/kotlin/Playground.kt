@@ -1,5 +1,7 @@
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
@@ -13,7 +15,12 @@ class Playground(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + SupervisorJob()
 
-    val displayActor: SendChannel<String> = TODO()
+    val displayActor: SendChannel<String> = actor(capacity = CONFLATED) {
+        for (message in channel) {
+            display.showNewLine(message)
+            delay(200)
+        }
+    }
 
     fun startAnimation() {
         launch { runDotAnim() }
@@ -28,7 +35,7 @@ class Playground(
 
     private suspend fun runDotAnim() = coroutineScope {
         while (isActive) {
-            delay(200); display.showNewLine(".")
+            delay(200); displayActor.send(".")
         }
     }
 
@@ -80,7 +87,7 @@ class Playground(
             }
 
             launch {
-                sortedOffersProducer.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } }
+                sortedOffersProducer.consumeEach { sorted -> sorted.forEach { displayActor.send(it.toString()) } }
             }
         }
     }
