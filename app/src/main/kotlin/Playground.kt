@@ -1,7 +1,5 @@
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class Playground(
     private val offersRepository: OffersRepository,
@@ -11,6 +9,15 @@ class Playground(
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + SupervisorJob()
+
+
+    fun showSortedOffers(queries: List<String>) {
+
+    }
+
+    private suspend fun getOffers(query: String): List<Offer> = withContext(Dispatchers.Default) {
+        offersRepository.getOffersBlocking(query)
+    }
 
     fun startAnimation() {
         launch { runDotAnim() }
@@ -36,12 +43,6 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String): List<Offer> = suspendCoroutine { coroutine ->
-        offersRepository.getOffersAsync(query) { offers ->
-            coroutine.resume(offers)
-        }
-    }
-
     private suspend fun getSellers() = withContext(Dispatchers.IO) {
         sellersRepository.getSellersBlocking()
     }
@@ -55,9 +56,5 @@ class Playground(
 
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
-    }
-
-    fun showSortedOffers(queries: List<String>) {
-
     }
 }
