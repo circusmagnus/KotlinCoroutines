@@ -12,5 +12,9 @@ class OffersRepository {
             whenDone(offers)
         }.start()
     }
+
+    fun getOffersFast(query: String): List<Offer> {
+        return OffersData.fastOffers.filter { offer -> offer.name.contains(query, true) }
+    }
 }
 

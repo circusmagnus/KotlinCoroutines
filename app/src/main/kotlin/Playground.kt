@@ -1,7 +1,7 @@
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class Playground(
     private val offersRepository: OffersRepository,
@@ -36,11 +36,15 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String): List<Offer> = suspendCoroutine { coroutine ->
-        offersRepository.getOffersAsync(query) { offers ->
-            coroutine.resume(offers)
-        }
+    private suspend fun getOffers(query: String): List<Offer> = withContext(Dispatchers.IO) {
+        offersRepository.getOffersBlocking(query)
     }
+
+//        suspendCoroutine { coroutine ->
+//        offersRepository.getOffersAsync(query) { offers ->
+//            coroutine.resume(offers)
+//        }
+//    }
 
     private suspend fun getSellers() = withContext(Dispatchers.IO) {
         sellersRepository.getSellersBlocking()
@@ -58,6 +62,44 @@ class Playground(
     }
 
     fun showSortedOffers(queries: List<String>) {
+        runBlocking {
+            //            queries.map { query ->
+//                    launch {
+//                        val offers = getOffers(query)
+//                        val sortedOffers = withContext(Dispatchers.Default) { insertionSort(offers.toTypedArray()) }
+//                        sortedOffers.forEach { display.showNewLine(it.toString()) }
+//                    }
+//                }
 
+            val queriesChannel = Channel<String>(4)
+            val unsortedOffersChannel = Channel<List<Offer>>(4)
+            val sortedOffersChannel = Channel<List<Offer>>(4)
+
+            launch {
+                queries.forEach { queriesChannel.send(it) }
+                queriesChannel.close()
+            }
+
+
+            repeat(4) {
+                launch(Dispatchers.IO) {
+                    queriesChannel.consumeEach { query -> unsortedOffersChannel.send(getOffers(query)) }
+                    unsortedOffersChannel.close()
+                }
+            }
+
+            repeat(4) {
+                launch(Dispatchers.Default) {
+                    unsortedOffersChannel.consumeEach { unsorted ->
+                        val sorted = unsorted.sorted()
+                        sortedOffersChannel.send(sorted)
+                    }
+                    sortedOffersChannel.close()
+                }
+            }
+            launch { sortedOffersChannel.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } } }
+
+
+        }
     }
 }
