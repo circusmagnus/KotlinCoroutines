@@ -8,13 +8,13 @@ internal object OffersData {
 
     val offers: List<Offer> = fastOffers
         get() {
-            repeat(1) { /*println("fetching offers on thread ${Thread.currentThread()} ")*/; Thread.sleep(5) }
+            repeat(5) { println("fetching offers on thread ${Thread.currentThread()} "); Thread.sleep(500) }
             return field
         }
 
     private fun generateOffers(): List<Offer> {
         val ids = generateSequence(1) { id -> id + 1 }
-            .take(10_000_000)
+            .take(100)
             .map { it.toString() }
             .toList()
 

@@ -1,6 +1,7 @@
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -11,6 +12,8 @@ class Playground(
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + SupervisorJob()
+
+    val displayActor: SendChannel<String> = TODO()
 
     fun startAnimation() {
         launch { runDotAnim() }
@@ -40,12 +43,6 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-//        suspendCoroutine { coroutine ->
-//        offersRepository.getOffersAsync(query) { offers ->
-//            coroutine.resume(offers)
-//        }
-//    }
-
     private suspend fun getSellers() = withContext(Dispatchers.IO) {
         sellersRepository.getSellersBlocking()
     }
@@ -64,37 +61,27 @@ class Playground(
     fun showSortedOffers(queries: List<String>) {
         runBlocking {
 
-            val queriesChannel = Channel<String>(4)
-            val unsortedOffersChannel = Channel<List<Offer>>(4)
-            val sortedOffersChannel = Channel<List<Offer>>(4)
+            val queriesProducer = produce(capacity = 4) { queries.forEach { send(it) } }
 
-            launch {
-                queries.forEach { queriesChannel.send(it) }
-                queriesChannel.close()
-            }
-
-            launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch(Dispatchers.IO) {
-                            for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
-                        }
+            val unsortedOffersProducer = produce(capacity = 4) {
+                repeat(4) {
+                    launch(Dispatchers.IO) {
+                        for (query in queriesProducer) send(getOffers(query))
                     }
                 }
-                unsortedOffersChannel.close()
+            }
+
+            val sortedOffersProducer = produce(capacity = 4) {
+                repeat(4) {
+                    launch(Dispatchers.Default) {
+                        for (unsorted in unsortedOffersProducer) send(unsorted.sorted())
+                    }
+                }
             }
 
             launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch(Dispatchers.Default) {
-                            for (unsorted in unsortedOffersChannel) sortedOffersChannel.send(unsorted.sorted())
-                        }
-                    }
-                }
-                sortedOffersChannel.close()
+                sortedOffersProducer.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } }
             }
-            launch { sortedOffersChannel.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } } }
         }
     }
 }
