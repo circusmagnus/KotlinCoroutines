@@ -29,9 +29,9 @@ class Playground(
     fun showSortedOffers(queries: List<String>) {
         runBlocking {
 
-            val queriesChannel = Channel<String>(4)
-            val unsortedOffersChannel = Channel<List<Offer>>(4)
-            val sortedOffersChannel = Channel<List<Offer>>(4)
+            val queriesChannel = Channel<String>()
+            val unsortedOffersChannel = Channel<List<Offer>>()
+            val sortedOffersChannel = Channel<List<Offer>>()
 
             launch {
                 queries.forEach { queriesChannel.send(it) }
@@ -59,7 +59,14 @@ class Playground(
                 }
                 sortedOffersChannel.close()
             }
-            launch { sortedOffersChannel.consumeEach { sorted -> sorted.forEach { display.showNewLine(it.toString()) } } }
+            launch {
+                sortedOffersChannel.consumeEach { sorted ->
+                    sorted.forEach {
+                        display.showNewLine(it.toString())
+                        delay(200)
+                    }
+                }
+            }
         }
     }
 }
