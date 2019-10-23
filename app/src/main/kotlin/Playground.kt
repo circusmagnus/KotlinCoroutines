@@ -6,6 +6,10 @@ class Playground(
     private val display: Display
 ) {
 
+    fun startAnimation() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     fun showOffersForQuery(query: String) {
         runBlocking {
             val anim = launch { runDotAnim() }
@@ -47,5 +51,9 @@ class Playground(
 
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
+    }
+
+    fun cancel() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
