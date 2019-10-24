@@ -4,11 +4,14 @@ interface Display {
 }
 
 class ConsoleDisplay : Display {
+
+    private var lineNumber = 0
+
     override fun show(what: String) {
-        print(what)
+        print("${++lineNumber}: $what")
     }
 
     override fun showNewLine(what: String) {
-        println(what)
+        println("${++lineNumber}: $what")
     }
 }

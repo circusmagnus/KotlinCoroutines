@@ -1,6 +1,5 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -31,7 +30,6 @@ class Playground(
 
             val queriesChannel = Channel<String>()
             val unsortedOffersChannel = Channel<List<Offer>>()
-            val sortedOffersChannel = Channel<List<Offer>>()
 
             launch {
                 queries.forEach { queriesChannel.send(it) }
@@ -49,23 +47,10 @@ class Playground(
                 unsortedOffersChannel.close()
             }
 
-            launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch(Dispatchers.Default) {
-                            for (unsorted in unsortedOffersChannel) sortedOffersChannel.send(unsorted.sorted())
-                        }
-                    }
-                }
-                sortedOffersChannel.close()
-            }
-            launch {
-                var offersShown = 0
-                sortedOffersChannel.consumeEach { sorted ->
-                    sorted.forEach {
-                        display.showNewLine(it.toString())
-                        display.showNewLine("It is ${++offersShown} offer")
-                        delay(200)
+            repeat(4) {
+                launch(Dispatchers.Default) {
+                    for (unsorted in unsortedOffersChannel) {
+                        unsorted.sorted().forEach { sorted -> display.showNewLine(sorted.toString()) }
                     }
                 }
             }
