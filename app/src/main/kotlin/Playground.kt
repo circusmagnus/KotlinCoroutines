@@ -1,9 +1,6 @@
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -15,34 +12,13 @@ class Playground(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + SupervisorJob()
 
-    val displayActor: SendChannel<String> = actor(capacity = CONFLATED) {
-        for (message in channel) {
-            display.showNewLine(message)
-            delay(200)
-        }
-    }
-
     fun startAnimation() {
         launch { runDotAnim() }
     }
 
-    fun showOffersWithQuery(query: String) {
-        launch {
-            val offers = getOffers(query)
-            display.showNewLine("Done. Offers: $offers")
-        }
-    }
-
     private suspend fun runDotAnim() = coroutineScope {
         while (isActive) {
-            delay(200); displayActor.send(".")
-        }
-    }
-
-    fun showSellersWithOffer(offerQuery: String) {
-        launch {
-            val sellers = getSellersForOffer(offerQuery)
-            display.showNewLine("Done. Sellers: $sellers")
+            delay(200); display.showNewLine(".")
         }
     }
 
@@ -50,44 +26,48 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-    private suspend fun getSellers() = withContext(Dispatchers.IO) {
-        sellersRepository.getSellersBlocking()
-    }
-
-    private suspend fun getSellersForOffer(offerQuery: String): List<Seller> = coroutineScope {
-        val getOffers = async { getOffers(offerQuery) }
-        val getSellers = async { getSellers() }
-
-        getSellers.await().filterSellingOffers(getOffers.await())
-    }
-
-    private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
-        offers.any { offer -> seller.offerIds.contains(offer.id) }
-    }
-
     fun showSortedOffers(queries: List<String>) {
         runBlocking {
 
-            val queriesProducer = produce(capacity = 4) { queries.forEach { send(it) } }
+            val queriesChannel = Channel<String>()
+            val unsortedOffersChannel = Channel<List<Offer>>()
+            val sortedOffersChannel = Channel<List<Offer>>()
 
-            val unsortedOffersProducer = produce(capacity = 4) {
-                repeat(4) {
-                    launch(Dispatchers.IO) {
-                        for (query in queriesProducer) send(getOffers(query))
-                    }
-                }
-            }
-
-            val sortedOffersProducer = produce(capacity = 4) {
-                repeat(4) {
-                    launch(Dispatchers.Default) {
-                        for (unsorted in unsortedOffersProducer) send(unsorted.sorted())
-                    }
-                }
+            launch {
+                queries.forEach { queriesChannel.send(it) }
+                queriesChannel.close()
             }
 
             launch {
-                sortedOffersProducer.consumeEach { sorted -> sorted.forEach { displayActor.send(it.toString()) } }
+                coroutineScope {
+                    repeat(4) {
+                        launch(Dispatchers.IO) {
+                            for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
+                        }
+                    }
+                }
+                unsortedOffersChannel.close()
+            }
+
+            launch {
+                coroutineScope {
+                    repeat(4) {
+                        launch(Dispatchers.Default) {
+                            for (unsorted in unsortedOffersChannel) sortedOffersChannel.send(unsorted.sorted())
+                        }
+                    }
+                }
+                sortedOffersChannel.close()
+            }
+            launch {
+                var offersShown = 0
+                sortedOffersChannel.consumeEach { sorted ->
+                    sorted.forEach {
+                        display.showNewLine(it.toString())
+                        display.showNewLine("It is ${++offersShown} offer")
+                        delay(200)
+                    }
+                }
             }
         }
     }
