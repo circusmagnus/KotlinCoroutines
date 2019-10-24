@@ -14,7 +14,7 @@ internal object OffersData {
 
     private fun generateOffers(): List<Offer> {
         val ids = generateSequence(1) { id -> id + 1 }
-            .take(10_000_000)
+            .take(100)
             .map { it.toString() }
             .toList()
 

@@ -1,7 +1,5 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -56,12 +54,6 @@ class Playground(
                     }
                 }
             }
-        }
-    }
-
-    private fun CoroutineScope.produceOffersFromDb(queriesChannel: ReceiveChannel<String>) = produce {
-        repeat(4) {
-            launch { for (query in queriesChannel) send(getOffers(query)) }
         }
     }
 }
