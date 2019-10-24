@@ -1,6 +1,7 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -31,7 +32,6 @@ class Playground(
 
             val queriesChannel = Channel<String>()
             val unsortedOffersChannel = Channel<List<Offer>>()
-            val sortedOffersChannel = Channel<List<Offer>>()
 
             launch {
                 queries.forEach { queriesChannel.send(it) }
@@ -49,24 +49,19 @@ class Playground(
                 unsortedOffersChannel.close()
             }
 
-            launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch(Dispatchers.Default) {
-                            for (unsorted in unsortedOffersChannel) sortedOffersChannel.send(unsorted.sorted())
-                        }
-                    }
-                }
-                sortedOffersChannel.close()
-            }
-            launch {
-                sortedOffersChannel.consumeEach { sorted ->
-                    sorted.forEach {
-                        display.showNewLine(it.toString())
-                        delay(200)
+            repeat(4) {
+                launch(Dispatchers.Default) {
+                    for (unsorted in unsortedOffersChannel) {
+                        unsorted.sorted().forEach { sorted -> display.showNewLine(sorted.toString()) }
                     }
                 }
             }
+        }
+    }
+
+    private fun CoroutineScope.produceOffersFromDb(queriesChannel: ReceiveChannel<String>) = produce {
+        repeat(4) {
+            launch { for (query in queriesChannel) send(getOffers(query)) }
         }
     }
 }
