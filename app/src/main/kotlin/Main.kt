@@ -3,7 +3,6 @@ import kotlin.random.Random
 
 fun main() {
     val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay())
-    playground.startAnimation()
 
     val availableNames = listOf(
         "Krzesło",

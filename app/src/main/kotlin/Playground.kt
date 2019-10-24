@@ -1,5 +1,7 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.consumeEach
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
@@ -11,13 +13,24 @@ class Playground(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + SupervisorJob()
 
+    private val displayActor: SendChannel<String> = DisplayActor()
+
+    private fun DisplayActor(): SendChannel<String> {
+        val mailBox = Channel<String>()
+        launch {
+            mailBox.consumeEach { message -> display.showNewLine(message) }
+        }
+        return mailBox
+    }
+
     fun startAnimation() {
         launch { runDotAnim() }
     }
 
     private suspend fun runDotAnim() = coroutineScope {
         while (isActive) {
-            delay(200); display.showNewLine(".")
+            delay(200)
+            displayActor.send(".")
         }
     }
 
@@ -50,7 +63,7 @@ class Playground(
             repeat(4) {
                 launch(Dispatchers.Default) {
                     for (unsorted in unsortedOffersChannel) {
-                        unsorted.sorted().forEach { sorted -> display.showNewLine(sorted.toString()) }
+                        unsorted.sorted().forEach { sorted -> displayActor.send(sorted.toString()) }
                     }
                 }
             }
