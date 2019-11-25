@@ -41,7 +41,7 @@ class Playground(
             launch {
                 coroutineScope {
                     repeat(4) {
-                        launch(Dispatchers.IO) {
+                        launch {
                             for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
                         }
                     }
@@ -50,7 +50,7 @@ class Playground(
             }
 
             repeat(4) {
-                launch(Dispatchers.Default) {
+                launch {
                     for (unsorted in unsortedOffersChannel) {
                         unsorted.sorted().forEach { sorted -> display.showNewLine(sorted.toString()) }
                     }
