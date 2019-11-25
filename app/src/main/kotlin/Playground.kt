@@ -44,34 +44,42 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-    suspend fun showSortedOffers(queries: List<String>) = coroutineScope {
-
-        val queriesChannel = Channel<String>()
-        val unsortedOffersChannel = Channel<List<Offer>>()
-
-        launch {
-            queries.forEach { queriesChannel.send(it) }
-            queriesChannel.close()
-        }
-
-        launch {
-            coroutineScope {
-                repeat(4) {
-                    launch(Dispatchers.IO) {
-                        for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
-                    }
-                }
-            }
-            unsortedOffersChannel.close()
-        }
-
-        repeat(4) {
-            launch(Dispatchers.Default) {
-                for (unsorted in unsortedOffersChannel) {
-                    unsorted.sorted().forEach { sorted -> displayActor.send(sorted.toString()) }
-                }
-            }
+    fun showSortedOffers(queryList: List<String>) {
+        runBlocking {
+            produceQueries(queryList)
+                .let { queries -> produceOffersFromDb(queries) }
+                .let { offers -> sortAndDisplay(offers) }
         }
     }
 
+    private fun CoroutineScope.produceQueries(queries: List<String>): ReceiveChannel<String> {
+        val output = Channel<String>()
+        launch {
+            for (query in queries) output.send(query)
+            output.close()
+        }
+        return output
+    }
+
+    private fun CoroutineScope.produceOffersFromDb(queriesChannel: ReceiveChannel<String>): ReceiveChannel<List<Offer>> {
+        val output = Channel<List<Offer>>()
+        launch {
+            coroutineScope {
+                repeat(4) {
+                    launch { for (query in queriesChannel) output.send(getOffers(query)) }
+                }
+            }
+            output.close()
+        }
+        return output
+    }
+
+    private fun CoroutineScope.sortAndDisplay(unsortedOffers: ReceiveChannel<List<Offer>>) = repeat(4) {
+        launch {
+            for (offers in unsortedOffers) {
+                val sorted = offers.sorted()
+                display.showNewLine("just sorted ${sorted.size} offers in $this")
+            }
+        }
+    }
 }
