@@ -49,10 +49,11 @@ class Playground(
                 unsortedOffersChannel.close()
             }
 
-            repeat(4) {
+            repeat(4) { index ->
                 launch {
                     for (unsorted in unsortedOffersChannel) {
-                        unsorted.sorted().forEach { sorted -> display.showNewLine(sorted.toString()) }
+                        val sorted = unsorted.sorted()
+                        display.showNewLine("just sorted ${sorted.size} offers in $this")
                     }
                 }
             }

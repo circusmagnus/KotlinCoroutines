@@ -8,7 +8,7 @@ internal object OffersData {
 
     val offers: List<Offer> = fastOffers
         get() {
-            repeat(1) { /*println("fetching offers on thread ${Thread.currentThread()} ")*/; Thread.sleep(5) }
+            repeat(5) { Thread.sleep(200) }
             return field
         }
 
