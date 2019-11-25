@@ -6,7 +6,7 @@ import kotlin.coroutines.CoroutineContext
 
 class Playground(
     private val offersRepository: OffersRepository,
-    private val sellersRepository: SellersRepository,
+    private val querySocket: QuerySocket,
     private val display: Display
 ) : CoroutineScope {
 
@@ -21,6 +21,12 @@ class Playground(
             mailBox.consumeEach { message -> display.showNewLine(message) }
         }
         return mailBox
+    }
+
+    fun startListening() {
+        launch {
+            querySocket.setListener { query -> }
+        }
     }
 
     fun startAnimation() {
@@ -38,35 +44,34 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-    fun showSortedOffers(queries: List<String>) {
-        runBlocking {
+    suspend fun showSortedOffers(queries: List<String>) = coroutineScope {
 
-            val queriesChannel = Channel<String>()
-            val unsortedOffersChannel = Channel<List<Offer>>()
+        val queriesChannel = Channel<String>()
+        val unsortedOffersChannel = Channel<List<Offer>>()
 
-            launch {
-                queries.forEach { queriesChannel.send(it) }
-                queriesChannel.close()
-            }
+        launch {
+            queries.forEach { queriesChannel.send(it) }
+            queriesChannel.close()
+        }
 
-            launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch(Dispatchers.IO) {
-                            for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
-                        }
+        launch {
+            coroutineScope {
+                repeat(4) {
+                    launch(Dispatchers.IO) {
+                        for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
                     }
                 }
-                unsortedOffersChannel.close()
             }
+            unsortedOffersChannel.close()
+        }
 
-            repeat(4) {
-                launch(Dispatchers.Default) {
-                    for (unsorted in unsortedOffersChannel) {
-                        unsorted.sorted().forEach { sorted -> displayActor.send(sorted.toString()) }
-                    }
+        repeat(4) {
+            launch(Dispatchers.Default) {
+                for (unsorted in unsortedOffersChannel) {
+                    unsorted.sorted().forEach { sorted -> displayActor.send(sorted.toString()) }
                 }
             }
         }
     }
+
 }
