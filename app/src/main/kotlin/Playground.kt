@@ -3,16 +3,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
-import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 class Playground(
     private val offersRepository: OffersRepository,
     private val querySocket: QuerySocket,
     private val display: Display
-) : CoroutineScope {
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + Job()
+) : CoroutineScope by CoroutineScope(EmptyCoroutineContext) {
 
     private val displayActor: SendChannel<String> = DisplayActor()
 
@@ -58,7 +55,9 @@ class Playground(
     private fun CoroutineScope.produceQueries(): ReceiveChannel<String> {
         val output = Channel<String>()
         launch {
+
             querySocket.setListener { query -> launch { output.send(query) } }
+
             suspendCancellableCoroutine<Unit> { cancellableContinuation ->
                 cancellableContinuation.invokeOnCancellation {
                     querySocket.stop()
