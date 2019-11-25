@@ -1,28 +1,12 @@
 import kotlinx.coroutines.cancel
-import kotlin.random.Random
 
 fun main() {
-    val playground = Playground(OffersRepository(), ConsoleDisplay())
+    val playground = Playground(OffersRepository(), QuerySocket(), ConsoleDisplay())
     playground.startAnimation()
 
-    val availableNames = listOf(
-        "Krzesło",
-        "Łóżko",
-        "Telefon",
-        "Rower",
-        "Spodnie",
-        "Zegarek",
-        "Fortepian",
-        "Mandarynka",
-        "Wół",
-        "Fajka"
-    )
+    playground.startListening()
 
-    val queries = generateSequence { Random.nextInt(0, availableNames.lastIndex) }
-        .take(100)
-        .map { availableNames[it] }
-        .toList()
-
-    playground.showSortedOffers(queries)
+    Thread.sleep(1000)
     playground.cancel()
+    Thread.sleep(3000)
 }

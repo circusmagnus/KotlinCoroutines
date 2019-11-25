@@ -1,5 +1,6 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlin.coroutines.CoroutineContext
@@ -11,7 +12,7 @@ class Playground(
 ) : CoroutineScope {
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + SupervisorJob()
+        get() = Dispatchers.Default + Job()
 
     private val displayActor: SendChannel<String> = DisplayActor()
 
@@ -25,7 +26,9 @@ class Playground(
 
     fun startListening() {
         launch {
-            querySocket.setListener { query -> }
+            produceQueries()
+                .let { queries -> produceOffersFromDb(queries) }
+                .let { offers -> sortAndDisplay(offers) }
         }
     }
 
@@ -46,17 +49,22 @@ class Playground(
 
     fun showSortedOffers(queryList: List<String>) {
         runBlocking {
-            produceQueries(queryList)
+            produceQueries()
                 .let { queries -> produceOffersFromDb(queries) }
                 .let { offers -> sortAndDisplay(offers) }
         }
     }
 
-    private fun CoroutineScope.produceQueries(queries: List<String>): ReceiveChannel<String> {
+    private fun CoroutineScope.produceQueries(): ReceiveChannel<String> {
         val output = Channel<String>()
         launch {
-            for (query in queries) output.send(query)
-            output.close()
+            querySocket.setListener { query -> launch { output.send(query) } }
+            suspendCancellableCoroutine<Unit> { cancellableContinuation ->
+                cancellableContinuation.invokeOnCancellation {
+                    querySocket.stop()
+                    output.close()
+                }
+            }
         }
         return output
     }

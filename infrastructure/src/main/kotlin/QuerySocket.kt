@@ -25,4 +25,8 @@ class QuerySocket {
             queries.forEach { onQuery(it) }
         }.start()
     }
+
+    fun stop() {
+        println("socket stopped")
+    }
 }
