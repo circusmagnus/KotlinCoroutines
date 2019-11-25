@@ -1,12 +1,10 @@
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
 import kotlin.coroutines.CoroutineContext
 
 class Playground(
     private val offersRepository: OffersRepository,
-    private val sellersRepository: SellersRepository,
     private val display: Display
 ) : CoroutineScope {
 
@@ -27,42 +25,42 @@ class Playground(
         offersRepository.getOffersBlocking(query)
     }
 
-    fun showSortedOffers(queries: List<String>) {
+    fun showSortedOffers(queryList: List<String>) {
         runBlocking {
-
-            val queriesChannel = Channel<String>()
-            val unsortedOffersChannel = Channel<List<Offer>>()
-
-            launch {
-                queries.forEach { queriesChannel.send(it) }
-                queriesChannel.close()
-            }
-
-            launch {
-                coroutineScope {
-                    repeat(4) {
-                        launch {
-                            for (query in queriesChannel) unsortedOffersChannel.send(getOffers(query))
-                        }
-                    }
-                }
-                unsortedOffersChannel.close()
-            }
-
-            repeat(4) { index ->
-                launch {
-                    for (unsorted in unsortedOffersChannel) {
-                        val sorted = unsorted.sorted()
-                        display.showNewLine("just sorted ${sorted.size} offers in $this")
-                    }
-                }
-            }
+            produceQueries(queryList)
+                .let { queries -> produceOffersFromDb(queries) }
+                .let { offers -> sortAndDisplay(offers) }
         }
     }
 
-    private fun CoroutineScope.produceOffersFromDb(queriesChannel: ReceiveChannel<String>) = produce {
-        repeat(4) {
-            launch { for (query in queriesChannel) send(getOffers(query)) }
+    private fun CoroutineScope.produceQueries(queries: List<String>): ReceiveChannel<String> {
+        val output = Channel<String>()
+        launch {
+            for (query in queries) output.send(query)
+            output.close()
+        }
+        return output
+    }
+
+    private fun CoroutineScope.produceOffersFromDb(queriesChannel: ReceiveChannel<String>): ReceiveChannel<List<Offer>> {
+        val output = Channel<List<Offer>>()
+        launch {
+            coroutineScope {
+                repeat(4) {
+                    launch { for (query in queriesChannel) output.send(getOffers(query)) }
+                }
+            }
+            output.close()
+        }
+        return output
+    }
+
+    private fun CoroutineScope.sortAndDisplay(unsortedOffers: ReceiveChannel<List<Offer>>) = repeat(4) {
+        launch {
+            for (offers in unsortedOffers) {
+                val sorted = offers.sorted()
+                display.showNewLine("just sorted ${sorted.size} offers in $this")
+            }
         }
     }
 }

@@ -2,7 +2,7 @@ import kotlinx.coroutines.cancel
 import kotlin.random.Random
 
 fun main() {
-    val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay())
+    val playground = Playground(OffersRepository(), ConsoleDisplay())
     playground.startAnimation()
 
     val availableNames = listOf(
