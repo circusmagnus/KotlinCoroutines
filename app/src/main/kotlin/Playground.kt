@@ -24,7 +24,7 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String): List<Offer> = withContext(Dispatchers.Default) {
+    private suspend fun getOffers(query: String): List<Offer> = withContext(Dispatchers.IO) {
         offersRepository.getOffersBlocking(query)
     }
 
