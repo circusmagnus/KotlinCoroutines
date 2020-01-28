@@ -1,7 +1,4 @@
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 class Playground(
     private val offersRepository: BlockingOffersRepository,
@@ -10,10 +7,16 @@ class Playground(
 
     fun run() {
         runBlocking {
-            repeat(3) { delay(200); display.showNewLine(".") }
-            val offers = withContext(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
+            val anim = launch {
+                while (true) {
+                    delay(200); display.showNewLine(".")
+                }
+            }
+            val offers = getOffers()
+            anim.cancelAndJoin()
             display.showNewLine("Done. Offers: $offers")
-            repeat(3) { delay(200); display.showNewLine(".") }
         }
     }
+
+    private suspend fun getOffers() = withContext(Dispatchers.IO) { offersRepository.getOffersBlocking("Krzesło") }
 }
