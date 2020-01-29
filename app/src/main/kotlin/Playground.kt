@@ -2,7 +2,7 @@ import kotlinx.coroutines.*
 import java.io.IOException
 
 class Playground(
-    private val offersRepository: BlockingOffersRepository,
+    private val offersRepository: OffersRepository,
     private val sellersRepository: SellersRepository,
     private val display: Display
 ) : CoroutineScope by CoroutineScope(

@@ -1,7 +1,7 @@
 import kotlinx.coroutines.cancel
 
 fun main() {
-    val playground = Playground(BlockingOffersRepository(), SellersRepository(), ConsoleDisplay())
+    val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay())
     Thread.sleep(500)
     playground.startAnimation()
     playground.showOffersWithQuery("Krzesło")
