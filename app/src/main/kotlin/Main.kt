@@ -5,6 +5,8 @@ fun main() {
     playground.showOffersForQuery("Krzesło")
     Thread.sleep(500)
     playground.showSellersWithOffer("Krzesło")
-    Thread.sleep(20_000)
+    Thread.sleep(5_000)
     playground.cancel()
+    println("canceled!")
+    Thread.sleep(5_000)
 }
