@@ -1,12 +1,16 @@
 import kotlinx.coroutines.*
 import java.io.IOException
+import java.util.concurrent.Executors
+import kotlin.coroutines.suspendCoroutine
 
 class Playground(
     private val offersRepository: OffersRepository,
     private val sellersRepository: SellersRepository,
     private val display: Display
 ) : CoroutineScope by CoroutineScope(
-    Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, e -> display.showNewLine("Fail: $e") }
+    Executors.newSingleThreadExecutor().asCoroutineDispatcher() +
+            SupervisorJob() +
+            CoroutineExceptionHandler { _, e -> display.showNewLine("Fail: $e") }
 ) {
 
     fun startAnimation() {
@@ -33,12 +37,16 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String) = withContext(Dispatchers.IO) {
-        offersRepository.getOffersBlocking(query)
+    private suspend fun getOffers(query: String) = suspendCoroutine<List<Offer>> { cont ->
+        offersRepository.getOffersAsync(query)
+            .runCatching { get() }
+            .let { cont.resumeWith(it) }
     }
 
-    suspend fun getSellers() = withContext(Dispatchers.IO) {
-        sellersRepository.getSellersBlocking()
+    private suspend fun getSellers() = suspendCoroutine<List<Seller>> { cont ->
+        sellersRepository.getSellersAsync()
+            .runCatching { get() }
+            .let { cont.resumeWith(it) }
     }
 
     private suspend fun getSellersForOffer(offerQuery: String): List<Seller> = coroutineScope {

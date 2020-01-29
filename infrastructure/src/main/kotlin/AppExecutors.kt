@@ -1,6 +1,6 @@
 import java.util.concurrent.Executors
 
-object AppExecutors {
+internal object AppExecutors {
 
     val fiveThreadsPool = Executors.newFixedThreadPool(5)
 }
