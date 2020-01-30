@@ -1,4 +1,5 @@
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.resume
 
@@ -31,8 +32,17 @@ class Playground(
     private fun getQueriesFlow(queries: List<String>): Flow<String> = queries.asFlow()
 
     private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = channelFlow {
-        collect { query ->
-            launch { send(Pair(query, getOffers(query))) }
+        val receiveChannel = Channel<String>()
+        launch {
+            collect { query -> receiveChannel.send(query) }
+        }
+
+        repeat(5) {
+            launch {
+                for (query in receiveChannel) {
+                    send(Pair(query, getOffers(query)))
+                }
+            }
         }
     }
 
