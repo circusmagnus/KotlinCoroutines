@@ -1,16 +1,13 @@
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 
 fun main() {
     runBlocking {
-        //        val appScope = this + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-
-        val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay(), this)
+        val playgroundScope = this + Job(parent = coroutineContext[Job])
+        val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay(), playgroundScope)
 
         playground.startAnimation()
         playground.showSellersForOffers(listOf("Krzesło", "Telefon", "Rower"))
-        delay(5_000)
+        delay(10_000)
         playground.cancel()
     }
 }
