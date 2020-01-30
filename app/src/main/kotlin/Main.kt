@@ -9,5 +9,6 @@ fun main() {
         playground.showSellersForOffers(listOf("Krzesło", "Telefon", "Rower"))
         delay(10_000)
         playground.cancel()
+        println("Canceled!")
     }
 }
