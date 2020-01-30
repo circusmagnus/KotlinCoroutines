@@ -1,6 +1,5 @@
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.resume
 
 class Playground(
