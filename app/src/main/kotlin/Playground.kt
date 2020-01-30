@@ -24,15 +24,26 @@ class Playground(
             getQueriesFlow(queries)
                 .mapToQueryWithOffers()
                 .mapToQueryWithSellers()
-                .collect { sellersForQuery -> }
+                .collect { (query, sellers) -> display.showNewLine("Result for $query is $sellers") }
         }
     }
 
-    private fun getQueriesFlow(queries: List<String>): Flow<String> = TODO()
+    private fun getQueriesFlow(queries: List<String>): Flow<String> = queries.asFlow()
 
-    private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = TODO()
+    private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = map { query ->
+        Pair(query, getOffers(query))
+    }
 
-    private fun Flow<Pair<String, List<Offer>>>.mapToQueryWithSellers(): Flow<Pair<String, List<Seller>>> = TODO()
+    private fun Flow<Pair<String, List<Offer>>>.mapToQueryWithSellers(): Flow<Pair<String, List<Seller>>> = flow {
+        coroutineScope {
+            val sellers = async { getSellers() }
+            collect { (query, offers) ->
+                val sellersForOffer = sellers.await().filterSellingOffers(offers)
+                val queryWithSellers = Pair(query, sellersForOffer)
+                emit(queryWithSellers)
+            }
+        }
+    }
 
     private suspend fun getOffers(query: String) = suspendCancellableCoroutine<List<Offer>> { cont ->
         offersRepository.getOffersAsync(query)
