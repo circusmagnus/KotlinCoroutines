@@ -2,7 +2,6 @@ import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class Playground(
     private val offersRepository: OffersRepository,
@@ -38,12 +37,12 @@ class Playground(
         }
     }
 
-    private suspend fun getOffers(query: String) = suspendCoroutine<List<Offer>> { cont ->
+    private suspend fun getOffers(query: String) = suspendCancellableCoroutine<List<Offer>> { cont ->
         offersRepository.getOffersAsync(query)
             .thenAccept { offers -> cont.resume(offers) }
     }
 
-    private suspend fun getSellers() = suspendCoroutine<List<Seller>> { cont ->
+    private suspend fun getSellers() = suspendCancellableCoroutine<List<Seller>> { cont ->
         sellersRepository.getSellersAsync()
             .thenAccept { cont.resume(it) }
     }
