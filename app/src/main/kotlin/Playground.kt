@@ -67,15 +67,21 @@ class Playground(
             .thenAccept { cont.resume(it) }
     }
 
-    private suspend fun getSellersForOffer(offerQuery: String): List<Seller> = coroutineScope {
-        val getOffers = async { getOffers(offerQuery) }
-        val getSellers = async { getSellers() }
-
-        val (offers, sellers) = Pair(getOffers.await(), getSellers.await())
-        sellers.filterSellingOffers(offers)
-    }
-
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
+    }
+}
+
+fun <T, R> Flow<T>.concurrentMap(concurrency: Int, transform: suspend (T) -> R): Flow<R> {
+    require(concurrency > 1) { "No sense with concurrency < 2" }
+    return channelFlow {
+        val inputChannel = produceIn(this)
+        repeat(concurrency) {
+            launch {
+                for (input in inputChannel) {
+                    send(transform(input))
+                }
+            }
+        }
     }
 }
