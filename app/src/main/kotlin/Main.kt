@@ -1,14 +1,16 @@
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 fun main() {
-    val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay())
-    Thread.sleep(500)
-    playground.startAnimation()
-    playground.showOffersWithQuery("Krzesło")
-    Thread.sleep(500)
-    playground.showSellersWithOffer("Krzesło")
-    Thread.sleep(5_000)
-    playground.cancel()
-    println("canceled!")
-    Thread.sleep(5_000)
+    runBlocking {
+        //        val appScope = this + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+
+        val playground = Playground(OffersRepository(), SellersRepository(), ConsoleDisplay(), this)
+
+        playground.startAnimation()
+        playground.showSellersForOffers(listOf("Krzesło", "Telefon", "Rower"))
+        delay(5_000)
+        playground.cancel()
+    }
 }

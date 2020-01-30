@@ -1,27 +1,17 @@
 import kotlinx.coroutines.*
-import java.io.IOException
-import java.util.concurrent.Executors
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlin.coroutines.resume
 
 class Playground(
     private val offersRepository: OffersRepository,
     private val sellersRepository: SellersRepository,
-    private val display: Display
-) : CoroutineScope by CoroutineScope(
-    Executors.newSingleThreadExecutor().asCoroutineDispatcher() +
-            SupervisorJob() +
-            CoroutineExceptionHandler { _, e -> display.showNewLine("Fail: $e") }
-) {
+    private val display: Display,
+    scope: CoroutineScope
+) : CoroutineScope by scope {
 
     fun startAnimation() {
         launch { runDotAnim() }
-    }
-
-    fun showOffersWithQuery(query: String) {
-        launch {
-            val offers = getOffers(query)
-            display.showNewLine("Done. Offers: $offers")
-        }
     }
 
     private suspend fun runDotAnim() {
@@ -30,12 +20,20 @@ class Playground(
         }
     }
 
-    fun showSellersWithOffer(offerQuery: String) {
+    fun showSellersForOffers(queries: List<String>) {
         launch {
-            val sellers = retryIO(3) { getSellersForOffer(offerQuery) }
-            display.showNewLine("Done. Sellers: $sellers")
+            getQueriesFlow(queries)
+                .mapToOffers()
+                .mapToSellersWithQuery()
+                .collect { sellersForQuery -> }
         }
     }
+
+    private fun getQueriesFlow(queries: List<String>): Flow<String> = TODO()
+
+    private fun Flow<String>.mapToOffers(): Flow<List<Offer>> = TODO()
+
+    private fun Flow<List<Offer>>.mapToSellersWithQuery(): Flow<Pair<String, List<Seller>>> = TODO()
 
     private suspend fun getOffers(query: String) = suspendCancellableCoroutine<List<Offer>> { cont ->
         offersRepository.getOffersAsync(query)
@@ -54,24 +52,6 @@ class Playground(
         val (offers, sellers) = Pair(getOffers.await(), getSellers.await())
         sellers.filterSellingOffers(offers)
     }
-
-    private suspend fun <T> retryIO(times: Int, what: suspend () -> T): T? {
-
-        suspend fun retry(retryCount: Int): T? = try {
-            what()
-        } catch (e: IOException) {
-            if (retryCount < times) {
-                display.showNewLine("failed to load data, retry count: $retryCount")
-                retry(retryCount + 1)
-            } else {
-                display.showNewLine("failed to load data, max retries reached")
-                null
-            }
-        }
-
-        return retry(0)
-    }
-
 
     private fun List<Seller>.filterSellingOffers(offers: List<Offer>) = filter { seller ->
         offers.any { offer -> seller.offerIds.contains(offer.id) }
