@@ -23,17 +23,17 @@ class Playground(
     fun showSellersForOffers(queries: List<String>) {
         launch {
             getQueriesFlow(queries)
-                .mapToOffers()
-                .mapToSellersWithQuery()
+                .mapToQueryWithOffers()
+                .mapToQueryWithSellers()
                 .collect { sellersForQuery -> }
         }
     }
 
     private fun getQueriesFlow(queries: List<String>): Flow<String> = TODO()
 
-    private fun Flow<String>.mapToOffers(): Flow<List<Offer>> = TODO()
+    private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = TODO()
 
-    private fun Flow<List<Offer>>.mapToSellersWithQuery(): Flow<Pair<String, List<Seller>>> = TODO()
+    private fun Flow<Pair<String, List<Offer>>>.mapToQueryWithSellers(): Flow<Pair<String, List<Seller>>> = TODO()
 
     private suspend fun getOffers(query: String) = suspendCancellableCoroutine<List<Offer>> { cont ->
         offersRepository.getOffersAsync(query)
