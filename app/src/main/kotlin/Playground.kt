@@ -30,8 +30,10 @@ class Playground(
 
     private fun getQueriesFlow(queries: List<String>): Flow<String> = queries.asFlow()
 
-    private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = map { query ->
-        Pair(query, getOffers(query))
+    private fun Flow<String>.mapToQueryWithOffers(): Flow<Pair<String, List<Offer>>> = channelFlow {
+        collect { query ->
+            launch { send(Pair(query, getOffers(query))) }
+        }
     }
 
     private fun Flow<Pair<String, List<Offer>>>.mapToQueryWithSellers(): Flow<Pair<String, List<Seller>>> = flow {
