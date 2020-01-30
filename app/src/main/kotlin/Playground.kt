@@ -35,6 +35,7 @@ class Playground(
         val receiveChannel = Channel<String>()
         launch {
             collect { query -> receiveChannel.send(query) }
+            receiveChannel.close()
         }
 
         repeat(5) {
